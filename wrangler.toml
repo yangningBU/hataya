@@ -4,6 +4,11 @@ main = "src/worker.js"
 compatibility_date = "2026-10-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Serve the app at hataya.<subdomain>.workers.dev.
+workers_dev = true
+# Give each non-production build its own preview URL.
+preview_urls = true
+
 [assets]
 directory = "./public"
 binding = "ASSETS"
