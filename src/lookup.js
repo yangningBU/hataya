@@ -4,7 +4,7 @@
 
 import { json, cleanWord, readJson, cachedJson, askClaude, EXAMPLE_SCHEMA, validExample } from './shared.js';
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 
 const form = {
   type: 'object',
@@ -71,7 +71,7 @@ const SCHEMA = {
 const SYSTEM = `You are a meticulous Hebrew grammarian helping learners of Modern Hebrew.
 The user sends one word: Hebrew (any inflected form, with or without nikkud, possibly with attached prefixes like ה/ו/ב/ל) or an English word to translate.
 Identify the dictionary word(s) it can be — up to 3, most likely first — and describe each:
-- noun: grammatical gender (m, f, or mf if both are used), the singular as lemma, and the plural (null if it has none).
+- noun: grammatical gender (m, f, or mf if both are used), the singular as lemma, and the plural (null if it has none). For nouns that exist only in the plural (מַיִם, מִכְנָסַיִם, אוֹפַנַּיִם), set both lemma and plural to that plural form, and say so in note. Never give an archaic or differently-meaning word as the singular.
 - adjective: lemma = masculine singular; adjective_forms = ms, fs, mp, fp.
 - verb: lemma = infinitive (or 3rd person masculine singular past if there is no infinitive); root letters; binyan; every form of past (9), present (ms, fs, mp, fp), future (10; for 2fp/3fp give the formal -נָה form when one exists), imperative (null if the verb has none) and infinitive. Use null for a single form that does not exist.
 - other: for words that are none of these (prepositions, names...), give lemma, gloss and a note only.

@@ -242,12 +242,29 @@ function scheduleExamples(q, delay) {
 /** Keep a short phrase (e.g. a Hebrew ending plus punctuation) on one line. */
 const keep = (...children) => h('span', { class: 'nowrap' }, ...children);
 
+// Runs of Hebrew (letters, nikkud, maqaf, and spaces between Hebrew words).
+const HEBREW_RUN = /[\u0591-\u05F4](?:[\u0591-\u05F4\s]*[\u0591-\u05F4])?/g;
+
+/** Wrap each Hebrew run of an English string in its own RTL span, so punctuation around it stays put. */
+function isolateHebrew(text) {
+  const out = [];
+  let last = 0;
+  for (const m of text.matchAll(HEBREW_RUN)) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    out.push(he(m[0]));
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
 /** A note paragraph; the text sits in its own span so wrapped lines align after the icon. */
-const noteP = (...children) => h('p', { class: 'note' }, h('span', {}, ...children));
+const noteP = (...children) =>
+  h('p', { class: 'note' }, h('span', {}, ...children.flatMap((c) => (typeof c === 'string' ? isolateHebrew(c) : [c]))));
 
 function nounNotes(entry) {
   const notes = [];
-  const sg = entry.lemma?.p || '';
+  const sg = entry.pluralOnly ? '' : entry.lemma?.p || '';
   const pl = entry.plural?.p || '';
   if (entry.gender === 'f' && sg && !/[הת]$/.test(sg)) {
     notes.push(['Feminine even though it doesn’t end in ', keep(he('־ה'), ' or ', he('־ת'), '.')]);
@@ -257,7 +274,7 @@ function nounNotes(entry) {
   }
   if (entry.gender === 'm' && /ות$/.test(pl)) notes.push(['Masculine, but its plural ends in ', keep(he('־וֹת'), '.')]);
   if (entry.gender === 'f' && /ים$/.test(pl) && !/יים$/.test(pl)) notes.push(['Feminine, but its plural ends in ', keep(he('־ִים'), '.')]);
-  if (/ַיִם$/.test(entry.plural?.n || '')) notes.push(['The plural is a dual form ', keep('(', he('־ַיִם'), '),'), ' used for pairs.']);
+  if (!entry.pluralOnly && /ַיִם$/.test(entry.plural?.n || '')) notes.push(['The plural is a dual form ', keep('(', he('־ַיִם'), '),'), ' used for pairs.']);
   if (entry.note) notes.push([entry.note]);
   return notes;
 }
@@ -273,7 +290,7 @@ function nounCard(result) {
     exampleBlock(result),
     g ? h('div', { class: `gender ${entry.gender}` }, genderIcon(g[0]), h('span', {}, g[1]), he(g[2], { class: 'he' })) : null,
     h('div', { class: 'grid2' },
-      formCell('Singular', 'יָחִיד', entry.lemma, hitSg),
+      formCell('Singular', 'יָחִיד', entry.pluralOnly ? null : entry.lemma, hitSg, 'no singular'),
       formCell('Plural', 'רַבִּים', entry.plural, hitPl, 'no plural'),
     ),
     ...nounNotes(entry).map((n) => noteP(...n)),
@@ -409,6 +426,7 @@ function fromAI(e, i) {
   if (entry.type === 'noun') {
     entry.gender = GENDER[e.gender] ? e.gender : null;
     entry.plural = fixForm(e.plural);
+    entry.pluralOnly = !!entry.plural && searchKey(entry.plural.n) === searchKey(entry.lemma.n);
   } else if (entry.type === 'adjective') {
     entry.forms = fixSlots(e.adjective_forms, SLOTS.present) || { ms: entry.lemma };
   } else if (entry.type === 'verb' && e.verb) {

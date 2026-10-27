@@ -31,3 +31,18 @@ test('works with nikkud, prefixes, spelling variants and English', () => {
 test('unknown words return nothing (so the app can ask AI)', () => {
   assert.equal(lookup('קרנפים').results.length, 0);
 });
+
+test('plural-only nouns have no singular and match as plural', () => {
+  for (const q of ['אופניים', 'אוֹפַנַּיִם', 'bicycle']) {
+    const r = first(q);
+    assert.equal(r.entry.lemma.p, 'אופניים', q);
+    assert.equal(r.entry.pluralOnly, true, q);
+    assert.equal(r.entry.plural.p, 'אופניים', q);
+  }
+  assert.deepEqual(first('אופניים').matches, [{ kind: 'plural' }]);
+  for (const q of ['מים', 'שמיים', 'חיים', 'מכנסיים', 'משקפיים', 'צוהריים']) {
+    assert.equal(first(q).entry.pluralOnly, true, q);
+    assert.deepEqual(first(q).matches, [{ kind: 'plural' }], q);
+  }
+  assert.equal(first('ספר').entry.pluralOnly, false);
+});

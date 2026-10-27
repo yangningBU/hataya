@@ -66,7 +66,7 @@ function buildEntries() {
 export function formsOf(entry) {
   const out = [];
   if (entry.type === 'noun') {
-    out.push({ form: entry.lemma, where: { kind: 'singular' } });
+    if (!entry.pluralOnly) out.push({ form: entry.lemma, where: { kind: 'singular' } });
     if (entry.plural) out.push({ form: entry.plural, where: { kind: 'plural' } });
   } else if (entry.type === 'adjective') {
     for (const k of ['ms', 'fs', 'mp', 'fp']) if (entry.forms[k]) out.push({ form: entry.forms[k], where: { kind: k } });
@@ -116,7 +116,8 @@ function group(hits, extra = {}) {
     byEntry.get(h.entry).matches.push(h.where);
   }
   // Prefer entries where the query is the dictionary form itself.
-  const isLemma = (r) => r.matches.some((w) => ['singular', 'ms'].includes(w.kind) || w.tense === 'infinitive');
+  const isLemma = (r) => r.matches.some((w) => ['singular', 'ms'].includes(w.kind) || w.tense === 'infinitive'
+    || (w.kind === 'plural' && r.entry.pluralOnly));
   return [...byEntry.values()].sort((a, b) => isLemma(b) - isLemma(a));
 }
 

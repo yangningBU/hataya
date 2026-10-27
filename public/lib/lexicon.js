@@ -1,7 +1,7 @@
 // Built-in dictionary. Words are written with nikkud; the plain spelling is
 // derived automatically (toPlain) unless given after a "|".
 //
-// Nouns:      singular | gender (m, f, mf) | plural ("-" if none) | English
+// Nouns:      singular | gender (m, f, mf) | plural ("-" if none, "=" if the word is plural-only) | English
 //             (a plain-spelling override can follow the singular after "~")
 // Adjectives: masc. sg | fem. sg | masc. pl | fem. pl | English
 // Verbs:      { r: root, b: binyan, g: English, ...engine flags } — see conjugate.js
@@ -98,7 +98,7 @@ const NOUNS_TSV = `
 יוֹם|m|יָמִים|day
 לַיְלָה|m|לֵילוֹת|night
 בֹּקֶר|m|בְּקָרִים|morning
-צׇהֳרַיִם|m|-|noon
+צׇהֳרַיִם|m|=|noon
 עֶרֶב|m|עֲרָבִים|evening
 שָׁבוּעַ|m|שָׁבוּעוֹת|week
 חֹדֶשׁ|m|חֳדָשִׁים|חודשים|month
@@ -140,14 +140,14 @@ const NOUNS_TSV = `
 שֶׁמֶשׁ|f|שְׁמָשׁוֹת|sun
 יָרֵחַ|m|יְרֵחִים|moon
 כּוֹכָב|m|כּוֹכָבִים|star
-שָׁמַיִם|m|-|sky
+שָׁמַיִם|m|=|sky
 עָנָן|m|עֲנָנִים|cloud
 גֶּשֶׁם|m|גְּשָׁמִים|rain
 שֶׁלֶג|m|שְׁלָגִים|snow
 רוּחַ|f|רוּחוֹת|wind, spirit
 אֵשׁ|f|-|fire
 אֲוִיר|m|-|air
-מַיִם|m|-|water
+מַיִם|m|=|water
 אוֹר|m|אוֹרוֹת|light
 צֶבַע|m|צְבָעִים|color
 כֶּלֶב|m|כְּלָבִים|dog
@@ -188,10 +188,10 @@ const NOUNS_TSV = `
 סַכִּין|mf|סַכִּינִים|knife
 בֶּגֶד|m|בְּגָדִים|garment, clothing
 חֻלְצָה|f|חֻלְצוֹת|shirt
-מִכְנָסַיִם|m|-|trousers
+מִכְנָסַיִם|m|=|trousers
 נַעַל|f|נַעֲלַיִם|shoe
 כּוֹבַע|m|כּוֹבָעִים|hat
-מִשְׁקָפַיִם|m|-|glasses
+מִשְׁקָפַיִם|m|=|glasses
 רֹאשׁ|m|רָאשִׁים|head
 לֵב|m|לְבָבוֹת|heart
 גּוּף|m|גּוּפִים|body
@@ -213,7 +213,7 @@ const NOUNS_TSV = `
 אוֹטוֹבּוּס|m|אוֹטוֹבּוּסִים|bus
 רַכֶּבֶת|f|רַכָּבוֹת|train
 מָטוֹס|m|מְטוֹסִים|airplane
-אוֹפַנַּיִם|m|-|bicycle
+אוֹפַנַּיִם|m|=|bicycle
 מְכוֹנָה|f|מְכוֹנוֹת|machine
 חַשְׁמַל|m|-|electricity
 שִׁיר|m|שִׁירִים|song, poem
@@ -229,7 +229,7 @@ const NOUNS_TSV = `
 צָבָא|m|צְבָאוֹת|army
 דֶּגֶל|m|דְּגָלִים|flag
 אַהֲבָה|f|אֲהָבוֹת|love
-חַיִּים|m|-|life
+חַיִּים|m|=|life
 חׇכְמָה|f|-|wisdom
 כּוֹחַ|m|כּוֹחוֹת|strength, force
 בְּרִיאוּת|f|-|health
@@ -245,13 +245,13 @@ const NOUN_NOTES = {
   'דֶּרֶךְ': 'Usually feminine, occasionally masculine.',
   'שֶׁמֶשׁ': 'Usually feminine; masculine in some literary use.',
   'סַכִּין': 'Used as both masculine and feminine.',
-  'מַיִם': 'Exists only in the plural.',
-  'שָׁמַיִם': 'Exists only in the plural.',
-  'חַיִּים': 'Exists only in the plural.',
-  'מִכְנָסַיִם': 'Exists only in the plural (dual form).',
-  'מִשְׁקָפַיִם': 'Exists only in the plural (dual form).',
-  'אוֹפַנַּיִם': 'Exists only in the plural (dual form).',
-  'צׇהֳרַיִם': 'Dual in form.',
+  'מַיִם': 'Has no singular: מַיִם is plural in form and takes plural agreement (הַמַּיִם קָרִים).',
+  'שָׁמַיִם': 'Has no singular: שָׁמַיִם is plural in form and takes plural agreement (הַשָּׁמַיִם כְּחֻלִּים).',
+  'חַיִּים': 'Has no singular: חַיִּים is plural in form and takes plural agreement (הַחַיִּים יָפִים).',
+  'מִכְנָסַיִם': 'Has no singular: one pair is also מִכְנָסַיִם (מִכְנָסַיִם חֲדָשִׁים, new trousers).',
+  'מִשְׁקָפַיִם': 'Has no singular: one pair is also מִשְׁקָפַיִם (מִשְׁקָפַיִם חֲדָשִׁים, new glasses).',
+  'אוֹפַנַּיִם': 'Has no singular: one bicycle is also אוֹפַנַּיִם (אוֹפַנַּיִם חֲדָשִׁים, a new bike). The form is the dual of אוֹפָן, "wheel" (literary); in modern Hebrew אוֹפָן usually means "manner, way".',
+  'צׇהֳרַיִם': 'Has no singular: צׇהֳרַיִם is dual in form (בַּצׇּהֳרַיִם, at noon).',
   'רוּחַ': 'Usually feminine.',
 };
 
@@ -648,11 +648,14 @@ export const NOUNS = parseRows(NOUNS_TSV).map((f) => {
   const gloss = rest.pop();
   const [pl, plPlain] = rest;
   const [sg, sgPlain] = sgField.split('~');
+  // Plural-only nouns (מַיִם, אוֹפַנַּיִם): the dictionary form is the plural, and there is no singular.
+  const pluralOnly = pl === '=';
   return {
     type: 'noun',
     lemma: form(sg, sgPlain),
     gender,
-    plural: pl && pl !== '-' ? form(pl, plPlain) : null,
+    pluralOnly,
+    plural: pluralOnly ? form(sg, sgPlain) : pl && pl !== '-' ? form(pl, plPlain) : null,
     gloss,
     note: NOUN_NOTES[sg] || null,
   };
