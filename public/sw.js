@@ -2,7 +2,7 @@
 // stale-while-revalidate, so the app opens instantly offline and picks up
 // new versions in the background. AI lookups (/api/) always go to the network.
 
-const CACHE = 'hataya-v2';
+const CACHE = 'hataya-v3';
 const SHELL = [
   './',
   'index.html',

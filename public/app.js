@@ -220,17 +220,27 @@ function scheduleExamples(q, delay) {
   exampleTimer = setTimeout(() => fetchExactExamples(q), delay);
 }
 
+/** Keep a short phrase (e.g. a Hebrew ending plus punctuation) on one line. */
+const keep = (...children) => h('span', { class: 'nowrap' }, ...children);
+
+/** A note paragraph; the text sits in its own span so wrapped lines align after the icon. */
+const noteP = (...children) => h('p', { class: 'note' }, h('span', {}, ...children));
+
 function nounNotes(entry) {
   const notes = [];
   const sg = entry.lemma?.p || '';
   const pl = entry.plural?.p || '';
-  if (entry.gender === 'f' && sg && !/[הת]$/.test(sg)) notes.push('Feminine even though it doesn’t end in ־ה or ־ת.');
-  if (entry.gender === 'm' && /ה$/.test(sg) && !/[ֶ]ה$/.test(entry.lemma.n)) notes.push('Masculine even though it ends in ־ה.');
-  if (entry.gender === 'm' && /ות$/.test(pl)) notes.push('Masculine, but its plural ends in ־וֹת.');
-  if (entry.gender === 'f' && /ים$/.test(pl) && !/יים$/.test(pl)) notes.push('Feminine, but its plural ends in ־ִים.');
-  if (/ַיִם$/.test(entry.plural?.n || '')) notes.push('The plural is a dual form (־ַיִם), used for pairs.');
-  if (entry.note) notes.push(entry.note);
-  return [...new Set(notes)];
+  if (entry.gender === 'f' && sg && !/[הת]$/.test(sg)) {
+    notes.push(['Feminine even though it doesn’t end in ', keep(he('־ה'), ' or ', he('־ת'), '.')]);
+  }
+  if (entry.gender === 'm' && /ה$/.test(sg) && !/[ֶ]ה$/.test(entry.lemma.n)) {
+    notes.push(['Masculine even though it ends in ', keep(he('־ה'), '.')]);
+  }
+  if (entry.gender === 'm' && /ות$/.test(pl)) notes.push(['Masculine, but its plural ends in ', keep(he('־וֹת'), '.')]);
+  if (entry.gender === 'f' && /ים$/.test(pl) && !/יים$/.test(pl)) notes.push(['Feminine, but its plural ends in ', keep(he('־ִים'), '.')]);
+  if (/ַיִם$/.test(entry.plural?.n || '')) notes.push(['The plural is a dual form ', keep('(', he('־ַיִם'), '),'), ' used for pairs.']);
+  if (entry.note) notes.push([entry.note]);
+  return notes;
 }
 
 function nounCard(result) {
@@ -247,7 +257,7 @@ function nounCard(result) {
       formCell('Singular', 'יָחִיד', entry.lemma, hitSg),
       formCell('Plural', 'רַבִּים', entry.plural, hitPl, 'no plural'),
     ),
-    ...nounNotes(entry).map((n) => h('p', { class: 'note' }, n)),
+    ...nounNotes(entry).map((n) => noteP(...n)),
     sourceLine(entry),
   );
 }
@@ -273,7 +283,7 @@ function adjectiveCard(result) {
       formCell('Masc. plural', 'זָכָר רַבִּים', f.mp, hit('mp'), '—', 'm'),
       formCell('Fem. plural', 'נְקֵבָה רַבּוֹת', f.fp, hit('fp'), '—', 'f'),
     ),
-    entry.note ? h('p', { class: 'note' }, entry.note) : null,
+    entry.note ? noteP(entry.note) : null,
     sourceLine(entry),
   );
 }
@@ -330,7 +340,7 @@ function verbCard(result) {
     conj.future ? section('future', tenseTable('future', conj.future, result.matches),
       'In everyday speech, אַתֶּן and הֵן usually take the masculine plural forms instead of the formal ־נָה forms.') : null,
     conj.imperative ? section('imperative', tenseTable('imperative', conj.imperative, result.matches)) : null,
-    entry.note ? h('p', { class: 'note' }, entry.note) : null,
+    entry.note ? noteP(entry.note) : null,
     sourceLine(entry),
   );
 }
@@ -340,7 +350,7 @@ function otherCard(result) {
     cardHead(result.entry),
     matchLine(result),
     exampleBlock(result),
-    result.entry.note ? h('p', { class: 'note' }, result.entry.note) : null,
+    result.entry.note ? noteP(result.entry.note) : null,
     sourceLine(result.entry),
   );
 }
