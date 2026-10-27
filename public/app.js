@@ -1,6 +1,7 @@
 import { lookup } from './lib/dictionary.js';
 import { toPlain, isHebrew, searchKey, toFinal } from './lib/hebrew.js';
 import { BINYANIM, SLOTS } from './lib/conjugate.js';
+import { makeExample, keyVariants } from './lib/sentence.js';
 
 // ---------------------------------------------------------------- helpers
 
@@ -128,6 +129,97 @@ function matchLine(result) {
   return h('p', { class: 'match' }, text);
 }
 
+// ---------------------------------------------------------------- example sentences
+
+function exampleBlock(result) {
+  const id = result.entry.id;
+  const state_ = state.current?.examples?.[id];
+  const example = state_?.example || result.entry.example;
+  const loading = state_?.status === 'loading';
+  const wrap = (...children) => h('div', { class: 'example-slot', 'data-example': id }, ...children);
+  if (!example) {
+    return wrap(loading ? h('p', { class: 'caption' }, h('span', { class: 'spinner' }), 'Finding an example sentence…') : null);
+  }
+  const parts = state.nikkud ? example.n : example.p;
+  return wrap(h('figure', { class: 'example' },
+    h('blockquote', { lang: 'he', dir: 'rtl' }, parts.before, h('mark', {}, parts.word), parts.after),
+    h('figcaption', {}, example.en, example.ai ? h('span', { class: 'pill badge ai', title: 'Written by AI. It may contain mistakes.' }, '✦ AI') : null),
+    loading ? h('p', { class: 'caption' }, h('span', { class: 'spinner' }), 'Finding an example with ', he(state.current.query), '…') : null,
+  ));
+}
+
+function refreshExample(result) {
+  const el = results.querySelector(`[data-example="${CSS.escape(result.entry.id)}"]`);
+  if (el) el.replaceWith(exampleBlock(result));
+}
+
+const EX_PREFIX = 'hataya:ex:v1:';
+const exampleCacheKey = (q, entry) => `${EX_PREFIX}${searchKey(q)}:${entry.type}:${searchKey(entry.lemma?.n || '')}`;
+const MAX_AI_EXAMPLES = 3;
+
+/** Does this result need an AI example that uses exactly what the user typed? */
+function needsExactExample(result, q) {
+  if (!isHebrew(q)) return false;
+  const ex = result.entry.example;
+  if (!ex) return true;
+  if (ex.ai) return false;
+  const typed = keyVariants(searchKey(q));
+  return !keyVariants(ex.key).some((k) => typed.includes(k));
+}
+
+function currentResults() {
+  const cur = state.current;
+  return cur ? (cur.ai || cur.local) : [];
+}
+
+/** Show examples already saved on this device (no network). */
+function applySavedExamples(q) {
+  const cur = state.current;
+  for (const r of currentResults().slice(0, MAX_AI_EXAMPLES)) {
+    if (!needsExactExample(r, q)) continue;
+    const saved = store.get(exampleCacheKey(q, r.entry), null);
+    const example = saved && makeExample(saved.nikkud, saved.english, saved.plain);
+    if (example) cur.examples[r.entry.id] = { example: { ...example, ai: true } };
+  }
+}
+
+/** Fetch AI examples for the typed form, for results whose built-in example uses a different form. */
+async function fetchExactExamples(q) {
+  const cur = state.current;
+  if (!cur || cur.query !== q || !navigator.onLine) return;
+  const todo = currentResults().slice(0, MAX_AI_EXAMPLES)
+    .filter((r) => needsExactExample(r, q) && !cur.examples[r.entry.id]);
+  await Promise.all(todo.map(async (r) => {
+    cur.examples[r.entry.id] = { status: 'loading' };
+    refreshExample(r);
+    let example = null;
+    try {
+      const res = await fetch('api/example', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          word: q, lemma: r.entry.lemma?.n, type: r.entry.type, gloss: r.entry.gloss,
+          form: describeMatch((r.matches || [])[0]) || r.entry.matchedText || '',
+        }),
+      });
+      const data = res.ok ? await res.json() : null;
+      const ex = data?.example;
+      example = ex && makeExample(ex.nikkud, ex.english, ex.plain);
+      if (example) store.set(exampleCacheKey(q, r.entry), ex);
+    } catch { /* keep the built-in example */ }
+    if (state.current !== cur) return;
+    cur.examples[r.entry.id] = example ? { example: { ...example, ai: true } } : { status: 'failed' };
+    refreshExample(r);
+  }));
+}
+
+let exampleTimer;
+function scheduleExamples(q, delay) {
+  clearTimeout(exampleTimer);
+  applySavedExamples(q);
+  exampleTimer = setTimeout(() => fetchExactExamples(q), delay);
+}
+
 function nounNotes(entry) {
   const notes = [];
   const sg = entry.lemma?.p || '';
@@ -149,6 +241,7 @@ function nounCard(result) {
   return h('article', { class: 'card' },
     cardHead(entry),
     matchLine(result),
+    exampleBlock(result),
     g ? h('div', { class: `gender ${entry.gender}` }, h('span', { class: 'sym', 'aria-hidden': 'true' }, g[0]), g[1], he(g[2], { class: 'he' })) : null,
     h('div', { class: 'grid2' },
       formCell('Singular', 'יָחִיד', entry.lemma, hitSg),
@@ -173,6 +266,7 @@ function adjectiveCard(result) {
   return h('article', { class: 'card' },
     cardHead(entry),
     matchLine(result),
+    exampleBlock(result),
     h('div', { class: 'grid2' },
       formCell('Masc. singular', 'זָכָר', f.ms, hit('ms'), '—', 'm'),
       formCell('Fem. singular', 'נְקֵבָה', f.fs, hit('fs'), '—', 'f'),
@@ -220,6 +314,7 @@ function verbCard(result) {
   return h('article', { class: 'card' },
     cardHead(entry),
     matchLine(result),
+    exampleBlock(result),
     h('div', { class: 'verb-meta' },
       entry.root ? h('span', { class: 'meta' }, h('b', {}, 'Root '), he(rootLetters, { class: 'root-letters' })) : null,
       b ? h('span', { class: 'meta' }, h('b', {}, 'Binyan '), b.en, ' · ', he(b.he)) : null,
@@ -244,6 +339,7 @@ function otherCard(result) {
   return h('article', { class: 'card' },
     cardHead(result.entry),
     matchLine(result),
+    exampleBlock(result),
     result.entry.note ? h('p', { class: 'note' }, result.entry.note) : null,
     sourceLine(result.entry),
   );
@@ -279,6 +375,8 @@ function fromAI(e, i) {
     note: e.note || null,
     matchedText: e.matched_form || null,
   };
+  const ex = e.example && makeExample(e.example.nikkud, e.example.english, e.example.plain);
+  entry.example = ex ? { ...ex, ai: true } : null;
   if (entry.type === 'noun') {
     entry.gender = GENDER[e.gender] ? e.gender : null;
     entry.plural = fixForm(e.plural);
@@ -356,8 +454,9 @@ function search(query, { fromSubmit = false } = {}) {
     return;
   }
   const { results: local, english } = lookup(q);
-  state.current = { query: q, local, english, ai: null };
+  state.current = { query: q, local, english, ai: null, examples: {} };
   setStatus();
+  if (local.length) scheduleExamples(q, fromSubmit ? 0 : 900);
 
   if (!local.length) {
     const cached = store.get(aiKey(q), null);
@@ -385,6 +484,7 @@ async function runAI(q) {
     }
     state.current.ai = ai;
     setStatus();
+    scheduleExamples(q, 0);
     renderResults();
   } catch (err) {
     if (err.name === 'AbortError' || state.current?.query !== q) return;

@@ -63,6 +63,14 @@ test('derived binyanim', () => {
   check({ root: 'גלה', binyan: 'hitpael' }, { 'past.1s': 'הִתְגַּלֵּיתִי', infinitive: 'לְהִתְגַּלּוֹת' });
 });
 
+test("hif'il plain spelling has no yod after the prefix", () => {
+  const c = conjugate({ root: 'נגע', binyan: 'hifil', pn: true });
+  assert.equal(c.past['3ms'].p, 'הגיע');
+  assert.equal(c.past['1s'].p, 'הגעתי');
+  assert.equal(conjugate({ root: 'נפל', binyan: 'hifil', pn: true }).past['3ms'].p, 'הפיל');
+  assert.equal(conjugate({ root: 'לבשׁ', binyan: 'hifil' }).past['3ms'].p, 'הלביש');
+});
+
 test('every lexicon verb conjugates without leftover template symbols', () => {
   for (const v of VERBS) {
     const c = conjugate({ root: v.r, binyan: v.b, ...v });

@@ -2,13 +2,29 @@
 // the lexicon (all conjugated verb forms, plurals, adjective forms) so that
 // any inflected form leads back to its dictionary entry.
 
-import { toPlain, searchKey, looseKey, isHebrew } from './hebrew.js';
+import { toPlain, searchKey, looseKey, isHebrew, stripNikkud } from './hebrew.js';
+import { makeExample } from './sentence.js';
+import { EXAMPLES_TSV } from './examples.js';
 import { conjugate, gizraOf, parseRoot, BINYANIM, SLOTS } from './conjugate.js';
 import { NOUNS, ADJECTIVES, VERBS } from './lexicon.js';
 
 const PREFIXES = ['ו', 'ה', 'ב', 'ל', 'מ', 'ש', 'כ'];
 
 const withPlain = (f) => (f ? { n: f.n.normalize('NFC'), p: f.p || toPlain(f.n) } : null);
+
+const EXAMPLES = new Map(
+  EXAMPLES_TSV.trim().split('\n').filter((l) => l.trim()).map((l) => {
+    const [key, he, en] = l.split('|');
+    return [key, makeExample(he, en)];
+  }),
+);
+
+export function exampleKeyOf(entry) {
+  if (entry.type === 'noun') return [`n:${entry.lemma.p}/${entry.gender}`, `n:${entry.lemma.p}`];
+  if (entry.type === 'adjective') return [`a:${entry.forms.ms.p}`];
+  return [`v:${stripNikkud(entry.rootSpec)}:${entry.binyan}`];
+}
+const exampleFor = (entry) => exampleKeyOf(entry).map((k) => EXAMPLES.get(k)).find(Boolean) || null;
 
 function buildEntries() {
   const entries = [];
@@ -27,6 +43,7 @@ function buildEntries() {
       type: 'verb',
       lemma,
       root: [...parseRoot(v.r)].map((x) => x.l).join(''),
+      rootSpec: v.r,
       binyan: v.b,
       gizra: v.irregular ? 'irregular' : gizraOf(entry),
       gloss: v.g,
@@ -35,7 +52,13 @@ function buildEntries() {
       source: 'local',
     });
   }
-  entries.forEach((e, i) => { e.id = `local-${i}`; });
+  entries.forEach((e, i) => {
+    e.id = `local-${i}`;
+    const ex = exampleFor(e);
+    // Use the entry's own plain spelling for the highlighted word when it is one of its forms.
+    const own = ex && formsOf(e).find(({ form }) => form.n === ex.n.word);
+    e.example = own ? { ...ex, p: { ...ex.p, word: own.form.p } } : ex;
+  });
   return entries;
 }
 

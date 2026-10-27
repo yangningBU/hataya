@@ -355,3 +355,11 @@ table.forms td.form.none { color: var(--muted); font: .9rem var(--ui-font); text
   table.forms td.form { font-size: 1.15rem; }
   .tagline { display: none; }
 }
+
+/* ---- example sentence */
+.example { margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); border-inline-start: 3px solid var(--accent); }
+.example blockquote { margin: 0; font: 1.25rem/1.6 var(--he-font); text-align: right; }
+.example mark { background: var(--hit); color: var(--hit-text); border-radius: 5px; padding: 0 3px; font-weight: 600; }
+.example figcaption { margin-top: 4px; color: var(--muted); font-size: .95rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.example .caption { margin-top: 8px; }
+.example-slot > .caption { margin-top: 12px; }

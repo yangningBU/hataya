@@ -582,6 +582,18 @@ export function realize(template, entry) {
 }
 
 /**
+ * Plain spelling of a generated form. The hif'il prefix הִ never takes a yod,
+ * even before a doubled letter (הִגִּיעַ → הגיע, הִפִּיל → הפיל).
+ */
+function plainOf(n, entry) {
+  const p = toPlain(n);
+  if (entry.binyan === 'hifil' && n.startsWith('ה' + HIRIQ) && p[1] === 'י' && n.replace(/[^\u05D0-\u05EA]/g, '')[1] !== 'י') {
+    return 'ה' + p.slice(2);
+  }
+  return p;
+}
+
+/**
  * Conjugate a lexicon verb entry. Returns
  * { past: {slot: {n, p}}, present, future, imperative, infinitive: {n, p} }
  * where n is the vowelled form and p the plain (full) spelling.
@@ -601,14 +613,14 @@ export function conjugate(entry) {
       if (ov && ov[slot] !== undefined) out[tense][slot] = explicitForm(ov[slot]);
       else if (tpl && tpl[slot]) {
         const n = realize(tpl[slot], entry);
-        out[tense][slot] = { n, p: toPlain(n) };
+        out[tense][slot] = { n, p: plainOf(n, entry) };
       } else out[tense][slot] = null;
     }
   }
   if (over.infinitive !== undefined) out.infinitive = explicitForm(over.infinitive);
   else if (p && p.infinitive) {
     const n = realize(p.infinitive, entry);
-    out.infinitive = { n, p: toPlain(n) };
+    out.infinitive = { n, p: plainOf(n, entry) };
   } else out.infinitive = null;
   return out;
 }

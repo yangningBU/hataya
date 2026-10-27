@@ -5,6 +5,7 @@ A small installable web app (PWA) for Hebrew learners. Type any Hebrew word and 
 - **Nouns**: masculine or feminine, singular and plural, plus notes on irregular cases (עִיר is feminine, לַיְלָה is masculine, מִלָּה takes ־ִים…)
 - **Verbs**: root, binyan, and every form: past, present, future, imperative, infinitive
 - **Adjectives**: masculine and feminine, singular and plural
+- **An example sentence** for every result, with the word highlighted and an English translation
 
 You can type *any* form (הָלַכְתִּי, גְּדוֹלוֹת, וְהַסְּפָרִים) with or without nikkud, or an English word. A toggle shows forms with vowels (nikkud) or in standard plain spelling.
 
@@ -20,6 +21,8 @@ You can type *any* form (הָלַכְתִּי, גְּדוֹלוֹת, וְהַס�
 
 Plain spellings follow the Academy of the Hebrew Language's ktiv male rules (`public/lib/hebrew.js`).
 
+**Example sentences.** Every built-in word has a hand-written example (`public/lib/examples.js`) that works offline. If you type a form that the example doesn't use (you search הָלַכְתִּי but the example says הָלַכְנוּ) and you're online, the app asks AI (`/api/example`) for a sentence with that exact form. Until it arrives, the built-in example is shown. AI examples are saved on the device and cached at the edge, so each form costs one call at most. Words answered by the AI lookup get their example in that same response.
+
 **AI fallback.** For words that aren't in the dictionary, the app calls `/api/lookup`. This small Cloudflare Worker asks Claude for a structured analysis in the same format. Answers are cached at the edge and saved on the device, so a word you've looked up once also works offline. AI answers are marked **✦ AI**.
 
 ## Project layout
@@ -32,7 +35,11 @@ public/              static app (no build step)
   lib/lexicon.js     built-in nouns, adjectives, verbs
   lib/dictionary.js  search index over every form
 src/worker.js        Cloudflare Worker: serves public/ and routes /api/lookup
-src/lookup.js        AI fallback handler
+src/lookup.js        AI word lookup (/api/lookup)
+src/example.js       AI example sentences (/api/example)
+src/shared.js        shared API helpers (validation, caching, Claude call)
+public/lib/examples.js    built-in example sentences
+public/lib/sentence.js    example parsing and plain spelling for sentences
 tests/               node:test unit tests
 ```
 
@@ -62,7 +69,7 @@ Without an API key the app still works fully offline. Unknown words then show a 
 
 ### Cost notes
 
-AI lookups use `claude-opus-5-5` and run only when a word isn't in the offline dictionary and the user presses Enter (or taps **Ask AI**). Results are cached per word for 30 days at the edge, and on each device indefinitely. The endpoint has no rate limiting yet. If you share the app widely, consider adding Cloudflare rate-limiting rules for `/api/lookup`.
+AI lookups use `claude-opus-5-5` and run only when a word isn't in the offline dictionary and the user presses Enter (or taps **Ask AI**). AI example sentences run (at low effort) only when the typed form differs from the built-in example's, for at most the top 3 results, and only after typing pauses. Results are cached per word for 30 days at the edge, and on each device indefinitely. The endpoint has no rate limiting yet. If you share the app widely, consider adding Cloudflare rate-limiting rules for `/api/lookup`.
 
 ## Adding words
 
@@ -72,4 +79,6 @@ Add a line to `public/lib/lexicon.js`:
 - **Adjective**: `ms|fs|mp|fp|English`
 - **Verb**: an object such as `{ r: 'כתב', b: 'paal', g: 'to write' }`. Flags cover verbs the rules can't infer: `fut` (future vowel), `py`/`pn`/`pa` (weak first letter), `c1Silent`, and `forms` (to override individual forms).
 
-Run `npm test`. One test checks that every verb in the lexicon conjugates cleanly.
+Every word also needs an example line in `public/lib/examples.js`: `key|Hebrew sentence with the {word} in braces|English`.
+
+Run `npm test`. The tests check that every verb conjugates cleanly and that every word has an example whose highlighted word really is one of its forms.

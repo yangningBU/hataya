@@ -2,6 +2,7 @@
 // derived automatically (toPlain) unless given after a "|".
 //
 // Nouns:      singular | gender (m, f, mf) | plural ("-" if none) | English
+//             (a plain-spelling override can follow the singular after "~")
 // Adjectives: masc. sg | fem. sg | masc. pl | fem. pl | English
 // Verbs:      { r: root, b: binyan, g: English, ...engine flags } — see conjugate.js
 
@@ -203,7 +204,7 @@ const NOUNS_TSV = `
 אֶצְבַּע|f|אֶצְבָּעוֹת|finger
 בֶּטֶן|f|בְּטָנִים|belly
 גַּב|m|גַּבּוֹת|back
-שֵׂעָר|m|שְׂעָרוֹת|hair
+שֵׂעָר~שיער|m|שְׂעָרוֹת|hair
 נֶפֶשׁ|f|נְפָשׁוֹת|soul
 כֶּסֶף|m|כְּסָפִים|money, silver
 זָהָב|m|-|gold
@@ -643,12 +644,13 @@ const form = (n, p) => ({ n, p: p || null });
 
 export const NOUNS = parseRows(NOUNS_TSV).map((f) => {
   // A plain-spelling override may follow either the singular or the plural.
-  let [sg, gender, ...rest] = f;
+  let [sgField, gender, ...rest] = f;
   const gloss = rest.pop();
   const [pl, plPlain] = rest;
+  const [sg, sgPlain] = sgField.split('~');
   return {
     type: 'noun',
-    lemma: form(sg),
+    lemma: form(sg, sgPlain),
     gender,
     plural: pl && pl !== '-' ? form(pl, plPlain) : null,
     gloss,
