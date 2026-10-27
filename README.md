@@ -20,7 +20,7 @@ You can type *any* form (הָלַכְתִּי, גְּדוֹלוֹת, וְהַס�
 
 Plain spellings follow the Academy of the Hebrew Language's ktiv male rules (`public/lib/hebrew.js`).
 
-**AI fallback.** For words that aren't in the dictionary, the app calls `/api/lookup`. This Cloudflare Pages Function asks Claude for a structured analysis in the same format. Answers are cached at the edge and saved on the device, so a word you've looked up once also works offline. AI answers are marked **✦ AI**.
+**AI fallback.** For words that aren't in the dictionary, the app calls `/api/lookup`. This small Cloudflare Worker asks Claude for a structured analysis in the same format. Answers are cached at the edge and saved on the device, so a word you've looked up once also works offline. AI answers are marked **✦ AI**.
 
 ## Project layout
 
@@ -31,7 +31,8 @@ public/              static app (no build step)
   lib/conjugate.js   verb conjugation engine
   lib/lexicon.js     built-in nouns, adjectives, verbs
   lib/dictionary.js  search index over every form
-functions/api/lookup.js   AI fallback (Cloudflare Pages Function)
+src/worker.js        Cloudflare Worker: serves public/ and routes /api/lookup
+src/lookup.js        AI fallback handler
 tests/               node:test unit tests
 ```
 
@@ -42,17 +43,20 @@ npm install
 npm test                      # unit tests
 npm start                     # static app only (no AI), at http://localhost:3000
 cp .dev.vars.example .dev.vars   # add your Anthropic API key
-npm run dev                   # app + AI function via wrangler, at http://localhost:8788
+npm run dev                   # app + AI lookup via wrangler, at http://localhost:8787
 ```
 
-## Deploy (Cloudflare Pages)
+## Deploy (Cloudflare Workers)
 
-1. In the Cloudflare dashboard, go to **Workers & Pages → Create → Pages → Connect to Git** and pick this repo.
-2. Leave the build command empty and set the **build output directory** to `public`.
-3. Under **Settings → Variables and Secrets**, add `ANTHROPIC_API_KEY` as a secret.
-4. Deploy. Every push to `main` redeploys.
+The app deploys as a Worker with static assets. `wrangler.toml` already says where the files are (`public/`) and which code handles `/api/*`.
 
-Or from the command line: `npx wrangler pages deploy public --project-name hataya`
+1. In the Cloudflare dashboard, go to **Workers & Pages → Create → Import a repository** and pick this repo.
+2. Name the Worker **`hataya`**. It must match `name` in `wrangler.toml`.
+3. Leave the build command empty. Keep the default deploy command (`npx wrangler deploy`) and the default non-production command.
+4. After the first deploy, go to the Worker's **Settings → Variables and Secrets** and add `ANTHROPIC_API_KEY` as a **Secret**.
+5. Every push to `main` redeploys.
+
+Or from the command line: `npx wrangler deploy`, then `npx wrangler secret put ANTHROPIC_API_KEY`.
 
 Without an API key the app still works fully offline. Unknown words then show a friendly "not configured" message.
 

@@ -1,4 +1,4 @@
-// Cloudflare Pages Function: POST /api/lookup { word }
+// POST /api/lookup { word }
 // Asks Claude for a structured analysis of a Hebrew word the offline
 // dictionary doesn't know. Responses are cached at the edge per word.
 
@@ -87,7 +87,8 @@ const json = (body, status = 200, headers = {}) =>
 
 const normalize = (w) => w.normalize('NFC').trim().replace(/\s+/g, ' ');
 
-export async function onRequestPost({ request, env, waitUntil }) {
+export async function handleLookup(request, env, ctx) {
+  if (request.method !== 'POST') return json({ error: 'Use POST.' }, 405, { allow: 'POST' });
   let word;
   try {
     ({ word } = await request.json());
@@ -143,10 +144,6 @@ export async function onRequestPost({ request, env, waitUntil }) {
   const response = json({ word, entries: data.entries, model: message.model }, 200, {
     'cache-control': 'public, max-age=2592000',
   });
-  waitUntil(cache.put(cacheKey, response.clone()));
+  ctx.waitUntil(cache.put(cacheKey, response.clone()));
   return response;
-}
-
-export function onRequest() {
-  return json({ error: 'Use POST.' }, 405, { allow: 'POST' });
 }
