@@ -280,7 +280,7 @@ p, figcaption, blockquote { text-wrap: pretty; }
 .gender.m { background: var(--masc-soft); color: var(--masc); }
 .gender.f { background: var(--fem-soft); color: var(--fem); }
 .gender.mf { background: var(--both-soft); color: var(--both); }
-.gender .sym { font-size: 1.5rem; line-height: 1; }
+.gender .sym { width: 1.4em; height: 1.4em; flex: none; display: block; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .gender .he { font-weight: 500; margin-left: auto; font-size: 1.1rem; }
 
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }

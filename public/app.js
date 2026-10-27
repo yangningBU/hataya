@@ -71,10 +71,29 @@ const NUMBER_GENDER = {
   fp: ['Feminine plural', 'נְקֵבָה רַבּוֹת'],
 };
 const GENDER = {
-  m: ['♂', 'Masculine', 'זָכָר'],
-  f: ['♀', 'Feminine', 'נְקֵבָה'],
-  mf: ['⚥', 'Masculine or feminine', 'זָכָר וּנְקֵבָה'],
+  m: ['m', 'Masculine', 'זָכָר'],
+  f: ['f', 'Feminine', 'נְקֵבָה'],
+  mf: ['mf', 'Either gender', 'זָכָר וּנְקֵבָה'],
 };
+
+// Gender symbols drawn as SVG: the ♂/♀ characters sit at different heights
+// in different fonts, so they can't be centered reliably against the text.
+const GENDER_PATHS = {
+  m: 'M14.5 9.5 20 4M15 4h5v5M15 14a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z',
+  f: 'M12 14v8M8.5 18.5h7M17 8.5a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z',
+  mf: 'M15.2 8.8 20 4M15 4h5v5M12 17v5M9.5 19.5h5M16.5 12.5a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z',
+};
+function genderIcon(g) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('class', 'sym');
+  svg.setAttribute('aria-hidden', 'true');
+  const path = document.createElementNS(NS, 'path');
+  path.setAttribute('d', GENDER_PATHS[g]);
+  svg.append(path);
+  return svg;
+}
 const TYPE = { noun: ['Noun', 'שֵׁם עֶצֶם'], verb: ['Verb', 'פֹּעַל'], adjective: ['Adjective', 'שֵׁם תֹּאַר'], other: ['Word', 'מִלָּה'] };
 
 function describeMatch(where) {
@@ -252,7 +271,7 @@ function nounCard(result) {
     cardHead(entry),
     matchLine(result),
     exampleBlock(result),
-    g ? h('div', { class: `gender ${entry.gender}` }, h('span', { class: 'sym', 'aria-hidden': 'true' }, g[0]), g[1], he(g[2], { class: 'he' })) : null,
+    g ? h('div', { class: `gender ${entry.gender}` }, genderIcon(g[0]), h('span', {}, g[1]), he(g[2], { class: 'he' })) : null,
     h('div', { class: 'grid2' },
       formCell('Singular', 'יָחִיד', entry.lemma, hitSg),
       formCell('Plural', 'רַבִּים', entry.plural, hitPl, 'no plural'),
