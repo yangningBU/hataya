@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Hataya · הטיה</title>
+  <meta name="description" content="Look up any Hebrew word: noun gender and plural, adjective forms, and full verb conjugations. Works offline.">
+  <meta name="theme-color" content="#1f3a5f" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f1724" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Hataya">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <img src="icons/icon.svg" alt="" width="36" height="36">
+      <div>
+        <h1>Hataya <span lang="he" dir="rtl">הַטָּיָה</span></h1>
+        <p class="tagline">Hebrew word forms, in your pocket</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span id="offline" class="pill offline" hidden>Offline</span>
+      <button id="install" class="ghost" hidden>Install</button>
+    </div>
+  </header>
+
+  <main>
+    <form id="search" class="search" role="search" autocomplete="off">
+      <label for="q" class="visually-hidden">Hebrew word</label>
+      <div class="search-box">
+        <input id="q" name="q" type="search" lang="he" dir="auto" enterkeyhint="search"
+               placeholder="Type a Hebrew word… or English" spellcheck="false" autocapitalize="off">
+        <button type="button" id="kbd-toggle" class="icon-btn" aria-pressed="false" aria-controls="kbd"
+                title="Hebrew keyboard"><span lang="he">א</span></button>
+        <button type="submit" class="icon-btn primary" title="Search" aria-label="Search">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Zm5.3-2.2L21 21"/></svg>
+        </button>
+      </div>
+      <div id="kbd" class="kbd" hidden lang="he" dir="ltr"></div>
+      <div class="options">
+        <label class="switch">
+          <input type="checkbox" id="nikkud">
+          <span class="track" aria-hidden="true"></span>
+          <span>Show vowels (nikkud) <span lang="he" class="he-sample">נִקּוּד</span></span>
+        </label>
+      </div>
+    </form>
+
+    <section id="status" class="status" aria-live="polite"></section>
+    <section id="results" class="results" aria-live="polite"></section>
+
+    <section id="intro" class="intro">
+      <h2>What can I look up?</h2>
+      <ul class="features">
+        <li><strong>Nouns</strong>: masculine or feminine, plus the plural</li>
+        <li><strong>Verbs</strong>: the root, the binyan and every form (past, present, future, imperative)</li>
+        <li><strong>Adjectives</strong>: masculine and feminine, singular and plural</li>
+      </ul>
+      <p>Type any form, for example a conjugated verb like <span lang="he">הלכתי</span>, and Hataya finds the dictionary word.</p>
+      <div class="examples" id="examples"></div>
+      <p class="fine">Common words work offline. For anything else, Hataya asks AI when you're online.</p>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>Forms follow standard vocalization and the Academy of the Hebrew Language's plain-spelling rules. AI answers can contain mistakes.</p>
+  </footer>
+</body>
+</html>
